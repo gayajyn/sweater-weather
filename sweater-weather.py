@@ -478,19 +478,19 @@ class SweaterWeatherApp(QMainWindow):
                 for c in clothing:
                     # Add clothing suggestion if it meets the criteria
                     if c["season"] == self.current_season:
-                        if c["factor"] == "temperature" and temp >= c["min"] and temp <= c["max"] and c["clothing"] not in suggestions:
+                        if c["factor"] == "temperature" and temp >= c["min"] and temp <= c["max"] and not any([c["clothing"] == i for i in suggestions]):
                             suggestions.append(c["clothing"])
-                        if c["factor"] == "precipitation" and ((precip and c["max"] >= 1) or (not precip and c["max"] <= 0)) and c["clothing"] not in suggestions:
+                        if c["factor"] == "precipitation" and ((precip and c["max"] >= 1) or (not precip and c["max"] <= 0)) and not any([c["clothing"] == i for i in suggestions]):
                             suggestions.append(c["clothing"])
-                        if c["factor"] == "wind_speed" and wind >= c["min"] and wind <= c["max"] and c["clothing"] not in suggestions:
+                        if c["factor"] == "wind_speed" and wind >= c["min"] and wind <= c["max"] and not any([c["clothing"] == i for i in suggestions]):
                             suggestions.append(c["clothing"])
                 for r in ratings:
                     # Add rating suggestion if it meets the criteria
-                    if r["factor"] == "temperature" and temp >= r["min"] and temp <= r["max"] and r["rating"] not in suggestions:
+                    if r["factor"] == "temperature" and temp >= r["min"] and temp <= r["max"] and not any([r["rating"] == i for i in suggestions]):
                         suggestions.append(r["rating"])
-                    if r["factor"] == "precipitation" and ((precip and r["max"] >= 1) or (not precip and r["max"] <= 0)) and r["rating"] not in suggestions:
+                    if r["factor"] == "precipitation" and ((precip and r["max"] >= 1) or (not precip and r["max"] <= 0)) and not any([r["rating"] == i for i in suggestions]):
                         suggestions.append(r["rating"])
-                    if r["factor"] == "wind_speed" and wind >= r["min"] and wind <= r["max"] and r["rating"] not in suggestions:
+                    if r["factor"] == "wind_speed" and wind >= r["min"] and wind <= r["max"] and not any([r["rating"] == i for i in suggestions]):
                         suggestions.append(r["rating"])
                 if suggestions:
                     # New header
