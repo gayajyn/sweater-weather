@@ -31,6 +31,7 @@ python sweater-weather.py
 * Enter a city name or check "Use My Current Location" for automatic location detection.
 * Click "Get Forecast" to get a text report of the weather forecast and its associated rating and clothing suggestions.
     * Only forecast periods with an associated rating or clothing item will appear.
+    * The window may need to be stretched horizontally to achieve proper formatting.
 
 ### Settings Tab
 * For first-time use, open the Settings tab, set the number of preferences you want to add, and click on "Edit Clothing". A new window will appear where you can enter and save your preferences.
@@ -38,8 +39,8 @@ python sweater-weather.py
     * Example clothing items: sweater, jacket, umbrella
     * For precipitation, a maximum of 0 or below indicates that there is no precipitation forecasted, and 1 or greater indicates that there will be precipitation. This is determined by searching for keywords in the NWS detailed forecast.
 * Once you click "Save", the preferences are saved in clothing.json, which will be in the same folder as sweater-weather.py. The program will lose access to the file if it is moved outside of the folder.
-* Do the same for ratings.
-    * Example ratings: Perfect, Good, Bad, Terrible
+* Do the same for ratings. Note that the preferences are checked in order, so for each row of the forecast report, the first preference that is met will be the displayed rating.
+    * Example ratings: Terrible, Bad, Good, Perfect
     * Rating preferences are saved in ratings.json.
 
 ### Exiting

@@ -35,47 +35,50 @@ def success_message(message):
 
 # Window to set clothing preferences
 class ClothingQuestionnaire(QDialog):
-    def __init__(self, num_clth):
+    def __init__(self, num_clth, clth_data):
         super().__init__()
         self.setWindowTitle("Clothing Questionnaire")
         self.layout = QVBoxLayout()
-        # Generate rows for input
-        self.responses = []
         self.row_input = []
         for i in range(num_clth):
             row = QHBoxLayout()
             row.addWidget(QLabel("In "))
             # Season dropdown
             season = QComboBox()
-            season.addItems(["Spring", "Summer", "Autumn", "Winter"])
+            season.addItems(["All Seasons", "Spring", "Summer", "Autumn", "Winter"])
             row.addWidget(season)
-            row.addWidget(QLabel(", you need "))
+            row.addWidget(QLabel(", you'll need "))
             # Clothing name text input
             clothing = QLineEdit()
             row.addWidget(clothing)
             row.addWidget(QLabel(" when the "))
             # Weather factor dropdown
             factor = QComboBox()
-            factor.addItems(["Temperature (F)", "Precipitation (0 = No, 1 = Yes)", "Wind Speed (mph)"])
+            factor.addItems(["Temperature (F)", "Precipitation (0 = None, 1 = Rain, 2 = Snow, 3 = Mixed)", "Wind Speed (mph)"])
             row.addWidget(factor)
             row.addWidget(QLabel(" is between "))
             # Minimum value picker
             min_value = QSpinBox()
-            min_value.setMinimum(-75)
-            min_value.setMaximum(175)
+            min_value.setMinimum(-80)
+            min_value.setMaximum(140)
             row.addWidget(min_value)
             row.addWidget(QLabel(" and "))
             # Maximum value picker
             max_value = QSpinBox()
-            max_value.setMinimum(-75)
-            max_value.setMaximum(175)
+            max_value.setMinimum(-80)
+            max_value.setMaximum(140)
             row.addWidget(max_value)
             row.addWidget(QLabel("."))
-            # Get input widgets for row
-            self.row_input.append([season, clothing, factor, min_value, max_value])
+            # Autofill form fields if clothing.json exists
+            if i < len(clth_data):
+                season.setCurrentIndex(clth_data[i][0])
+                clothing.setText(clth_data[i][1])
+                factor.setCurrentIndex(clth_data[i][2])
+                min_value.setValue(clth_data[i][3])
+                max_value.setValue(clth_data[i][4])
+            self.row_input.append([season, clothing, factor, min_value, max_value])  # Group input widgets
             self.layout.addLayout(row)
-        # Row for buttons
-        self.buttons = QHBoxLayout()
+        self.buttons = QHBoxLayout()  # Menu row
         # Save button
         self.save_btn = QPushButton("Save")
         self.save_btn.clicked.connect(self.save)
@@ -84,6 +87,7 @@ class ClothingQuestionnaire(QDialog):
         self.cancel_btn = QPushButton("Cancel")
         self.cancel_btn.clicked.connect(self.reject)
         self.buttons.addWidget(self.cancel_btn)
+        # Add buttons to row
         self.layout.addLayout(self.buttons)
         self.setLayout(self.layout)
 
@@ -100,13 +104,20 @@ class ClothingQuestionnaire(QDialog):
                         return
                     # Rename weather factor
                     if factor_label.currentText() == "Wind Speed (mph)":
-                        factor = "wind_speed"
-                    elif factor_label.currentText() == "Precipitation (0 = No, 1 = Yes)":
+                        # Prevent negative wind speeds
+                        if min_value.value() < 0:
+                            error_message("Wind speed values cannot be negative.")
+                            return
+                        factor = "wind speed"
+                    elif factor_label.currentText() == "Precipitation (0 = None, 1 = Rain, 2 = Snow, 3 = Mixed)":
+                        # Prevent out-of-range precipitation values
+                        if min_value.value() < 0 or max_value.value() > 3:
+                            error_message("Precipitation values must be between 0 and 3.")
+                            return
                         factor = "precipitation"
                     else:
                         factor = "temperature"
-                    # Add dictionary item
-                    responses.append({"season": season.currentText(), "clothing": clothing.text(), "factor": factor, "min": min_value.value(), "max": max_value.value()})
+                    responses.append({"season": season.currentText().lower(), "clothing": clothing.text(), "factor": factor, "min": min_value.value(), "max": max_value.value()})
                 # If a text box is empty, send a confirmation message
                 elif not ignore_blanks:
                     ok = QMessageBox.question(self, "Ignore Empty Fields", "There are empty fields. These will be discarded, do you want to continue?", QMessageBox.Yes | QMessageBox.No)
@@ -118,7 +129,6 @@ class ClothingQuestionnaire(QDialog):
             with open("clothing.json", "w") as file:
                 json.dump(responses, file)
             success_message("Clothing preferences saved successfully.")
-            # Close window
             self.accept()
         except Exception as e:
             error_message(f"Error saving clothing preferences: {e}")
@@ -126,42 +136,44 @@ class ClothingQuestionnaire(QDialog):
 
 # Window to set rating preferences
 class RatingQuestionnaire(QDialog):
-    def __init__(self, num_ratg):
+    def __init__(self, num_ratg, ratg_data):
         super().__init__()
         self.setWindowTitle("Rating Questionnaire")
         self.layout = QVBoxLayout()
-        # Generate rows for input
-        self.responses = []
         self.row_input = []
         for i in range(num_ratg):
             row = QHBoxLayout()
-            row.addWidget(QLabel("The weather is "))
+            row.addWidget(QLabel(f"{i + 1}. The weather is "))
             # Rating text box
             rating = QLineEdit()
             row.addWidget(rating)
             row.addWidget(QLabel(" when the "))
             # Weather factor dropdown
             factor = QComboBox()
-            factor.addItems(["Temperature", "Precipitation (0 = No, 1 = Yes)", "Wind Speed (mph)"])
+            factor.addItems(["Temperature (F)", "Precipitation (0 = None, 1 = Rain, 2 = Snow, 3 = Mixed)", "Wind Speed (mph)"])
             row.addWidget(factor)
             row.addWidget(QLabel(" is between "))
             # Minimum value picker
             min_value = QSpinBox()
-            min_value.setMinimum(-75)
-            min_value.setMaximum(175)
+            min_value.setMinimum(-80)
+            min_value.setMaximum(140)
             row.addWidget(min_value)
             row.addWidget(QLabel(" and "))
             # Maximum value picker
             max_value = QSpinBox()
-            max_value.setMinimum(-75)
-            max_value.setMaximum(175)
+            max_value.setMinimum(-80)
+            max_value.setMaximum(140)
             row.addWidget(max_value)
             row.addWidget(QLabel("."))
-            # Get input widgets for row
-            self.row_input.append([rating, factor, min_value, max_value])
+            # Autofill form fields if clothing.json exists
+            if i < len(ratg_data):
+                rating.setText(ratg_data[i][0])
+                factor.setCurrentIndex(ratg_data[i][1])
+                min_value.setValue(ratg_data[i][2])
+                max_value.setValue(ratg_data[i][3])
+            self.row_input.append([rating, factor, min_value, max_value])  # Group input widgets
             self.layout.addLayout(row)
-        # Row for buttons
-        self.buttons = QHBoxLayout()
+        self.buttons = QHBoxLayout()  # Menu row
         # Save button
         self.save_btn = QPushButton("Save")
         self.save_btn.clicked.connect(self.save)
@@ -173,7 +185,7 @@ class RatingQuestionnaire(QDialog):
         self.layout.addLayout(self.buttons)
         self.setLayout(self.layout)
 
-    # Save input into clothing.json
+    # Save input into ratings.json
     def save(self):
         responses = []
         ignore_blanks = False
@@ -186,16 +198,23 @@ class RatingQuestionnaire(QDialog):
                         return
                     # Rename weather factor
                     if factor_label.currentText() == "Wind Speed (mph)":
-                        factor = "wind_speed"
-                    elif factor_label.currentText() == "Precipitation (0 = No, 1 = Yes)":
+                        # Prevent negative wind speeds
+                        if min_value.value() < 0:
+                            error_message("Wind speed values cannot be negative.")
+                            return
+                        factor = "wind speed"
+                    elif factor_label.currentText() == "Precipitation (0 = None, 1 = Rain, 2 = Snow, 3 = Mixed)":
+                        # Prevent out-of-range precipitation values
+                        if min_value.value() < 0 or max_value.value() > 3:
+                            error_message("Precipitation values must be between 0 and 3.")
+                            return
                         factor = "precipitation"
                     else:
                         factor = "temperature"
-                    # Add dictionary item
                     responses.append({"rating": rating.text(), "factor": factor, "min": min_value.value(), "max": max_value.value()})
                 # If a text box is empty, send a confirmation message
                 elif not ignore_blanks:
-                    ok = QMessageBox.question(self, "Ignore Empty Fields", "There are empty fields. These will be discarded, do you want to continue?", QMessageBox.Yes | QMessageBox.No)
+                    ok = QMessageBox.question(self, "Ignore Empty Fields", "Empty entries will be discarded, do you want to continue?", QMessageBox.Yes | QMessageBox.No)
                     if ok == QMessageBox.Yes:
                         ignore_blanks = True
                     else:
@@ -204,7 +223,6 @@ class RatingQuestionnaire(QDialog):
             with open("ratings.json", "w") as file:
                 json.dump(responses, file)
             success_message("Rating preferences saved successfully.")
-            # close window
             self.accept()
         except Exception as e:
             error_message(f"Error saving preferences: {e}")
@@ -215,20 +233,20 @@ class SweaterWeatherApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Sweater Weather")
-        self.setGeometry(500, 200, 500, 250)
+        self.setGeometry(500, 200, 0, 0)
         self.current_season = self.get_season()
         self.initUI()
 
     def get_season(self):
         month = datetime.now().month
         if 3 <= month <= 5:
-            return "Spring"
+            return "spring"
         elif 6 <= month <= 8:
-            return "Summer"
+            return "summer"
         elif 9 <= month <= 11:
-            return "Autumn"
+            return "autumn"
         else:
-            return "Winter"
+            return "winter"
 
     def initUI(self):
         self.tabs = QTabWidget()
@@ -244,15 +262,15 @@ class SweaterWeatherApp(QMainWindow):
     # Changes color of UI based on the current season
     def apply_seasonal_theme(self):
         palette = QPalette()
-        if self.current_season == "Spring":
+        if self.current_season == "spring":
             gradient = QLinearGradient(0, 0, 1, 1)
             gradient.setColorAt(0, QColor("#A7D3A6"))
             gradient.setColorAt(1, QColor("#FFC0CB"))
-        elif self.current_season == "Summer":
+        elif self.current_season == "summer":
             gradient = QLinearGradient(0, 0, 1, 1)
             gradient.setColorAt(0, QColor("#FFD700"))
             gradient.setColorAt(1, QColor("#87CEEB"))
-        elif self.current_season == "Autumn":
+        elif self.current_season == "autumn":
             gradient = QLinearGradient(0, 0, 1, 1)
             gradient.setColorAt(0, QColor("#FF7F50"))
             gradient.setColorAt(1, QColor("#8B4513"))
@@ -260,7 +278,6 @@ class SweaterWeatherApp(QMainWindow):
             gradient = QLinearGradient(0, 0, 1, 1)
             gradient.setColorAt(0, QColor("#B0E0E6"))
             gradient.setColorAt(1, QColor("#FFFFFF"))
-
         palette.setBrush(QPalette.Window, QBrush(gradient))
         self.setPalette(palette)
 
@@ -273,7 +290,7 @@ class SweaterWeatherApp(QMainWindow):
         welcome_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(welcome_label)
         # Display season
-        season_label = QLabel(f"Theme: {self.current_season}")
+        season_label = QLabel(f"Theme: {self.current_season.title()}")
         season_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(season_label)
         # Location name input
@@ -291,8 +308,7 @@ class SweaterWeatherApp(QMainWindow):
         # Status/report header
         self.status = QLabel("Weather forecast will appear here.")
         layout.addWidget(self.status)
-        # Forecast report
-        self.forecast_display = QLabel()
+        self.forecast_display = QLabel()  # Forecast report
         self.forecast_display.setWordWrap(True)  # Enable text wrapping
         layout.addWidget(self.forecast_display)
         tab.setLayout(layout)
@@ -306,8 +322,7 @@ class SweaterWeatherApp(QMainWindow):
         layout.addWidget(QLabel("<b>Saved Clothing Preferences:</b>"))
         self.clth_display = QLabel(self.display_clothing())
         layout.addWidget(self.clth_display)
-        # Options row
-        row1 = QHBoxLayout()
+        row1 = QHBoxLayout()  # Options row
         # Choose number of rows
         row1.addWidget(QLabel("Number of preferences (1 - 20):"), alignment=Qt.AlignRight)
         self.num_clth = QSpinBox()
@@ -325,8 +340,7 @@ class SweaterWeatherApp(QMainWindow):
         layout.addWidget(QLabel("<b>Saved Rating Preferences:</b>"))
         self.ratg_display = QLabel(self.display_ratings())
         layout.addWidget(self.ratg_display)
-        # Options row
-        row2 = QHBoxLayout()
+        row2 = QHBoxLayout()  # Options row
         # Choose number of rows
         row2.addWidget(QLabel("Number of preferences (1 - 20):"))
         self.num_ratg = QSpinBox()
@@ -345,43 +359,72 @@ class SweaterWeatherApp(QMainWindow):
 
     # Opens clothing questionnaire
     def edit_clothing(self):
-        ClothingQuestionnaire(self.num_clth.value()).exec_()
-        self.clth_display.setText(self.display_clothing())
+        try:
+            # Fetch existing preferences if available
+            with open("clothing.json", "r") as file:
+                prefs = json.load(file)
+            # Convert to autofill data
+            clth_data = []
+            for p in prefs:
+                clth_data.append([["all seasons", "spring", "summer", "autumn", "winter"].index(p["season"]), p["clothing"], ["temperature", "precipitation", "wind speed"].index(p["factor"]), p["min"], p["max"]])
+            ClothingQuestionnaire(self.num_clth.value(), clth_data).exec_()  # Open autofilled questionnaire
+        except Exception:
+            ClothingQuestionnaire(self.num_clth.value(), []).exec_()  # Open blank questionnaire
+        self.clth_display.setText(self.display_clothing())  # Update display aftrer submission
 
     # Opens rating questionnaire
     def edit_ratings(self):
-        RatingQuestionnaire(self.num_ratg.value()).exec_()
-        self.ratg_display.setText(self.display_ratings())
+        try:
+            # Fetch existing preferences if available
+            with open("ratings.json", "r") as file:
+                prefs = json.load(file)
+            ratg_data = []
+            for p in prefs:
+                ratg_data.append([p["rating"], ["temperature", "precipitation", "wind speed"].index(p["factor"]), p["min"], p["max"]])
+            RatingQuestionnaire(self.num_ratg.value(), ratg_data).exec_()  # Open autofilled questionnaire
+        except Exception:
+            RatingQuestionnaire(self.num_ratg.value(), []).exec_()  # Open blank questionnaire
+        self.ratg_display.setText(self.display_ratings())  # Update display after submission
 
     # Gets and prints saved preferences from clothing.json
     def display_clothing(self):
-        text = ""
         try:
             with open("clothing.json", "r") as file:
                 prefs = json.load(file)
+            text = ""
             for p in prefs:
-                # Row formatting
-                text += "\n{} ({}): {}   {} - {}".format(p["clothing"], p["season"], p["factor"], str(p["min"]), str(p["max"]))
+                if p["season"] == "all seasons":
+                    season = ""
+                else:
+                    season = p["season"] + " "
+                if p["min"] == p["max"]:
+                    min_max = str(p["min"])
+                else:
+                    min_max = str(p["min"]) + " - " + str(p["max"])
+                text += "{}: {}{} is {}\n".format(p["clothing"], season, p["factor"], min_max)  # Row formatting
             return text
         except FileNotFoundError:
             return "No saved clothing preferences."
         except Exception as e:
-            return f"Unable to load clothing preferences : {e}"
+            return f"Unable to load clothing preferences.\nError details: {e}"
 
     # Gets and prints saved preferences from ratings.json
     def display_ratings(self):
-        text = ""
         try:
             with open("ratings.json", "r") as file:
                 prefs = json.load(file)
+            text = ""
             for p in prefs:
-                # Row formatting
-                text += "\n{}: {}   {} - {}".format(p["rating"], p["factor"], str(p["min"]), str(p["max"]))
+                if p["min"] == p["max"]:
+                    min_max = str(p["min"])
+                else:
+                    min_max = str(p["min"]) + " - " + str(p["max"])
+                text += "{}: {} is {}\n".format(p["rating"], p["factor"], min_max)  # Row formatting
             return text
         except FileNotFoundError:
             return "No saved rating preferences."
         except Exception as e:
-            return f"Unable to load rating preferences: {e}"
+            return f"Unable to load rating preferences\nError details: {e}"
 
     # Gets weather data from NWS API as JSON
     def fetch_weather_data(self, lat, lon):
@@ -393,7 +436,7 @@ class SweaterWeatherApp(QMainWindow):
                 if forecast_response.status_code == 200:
                     return forecast_response.json()
         except Exception as e:
-            self.forecast_label.setText(f"Error fetching weather data: {e}")
+            self.forecast_label.setText(f"Error fetching weather data. Try selecting a different location, or try again later.\nError details: {e}")
 
     # Gets current location using IP address
     def fetch_current_location(self):
@@ -403,7 +446,7 @@ class SweaterWeatherApp(QMainWindow):
                 data = response.json()
                 return data['lat'], data['lon'], data['city'], data['regionName']
         except Exception as e:
-            self.status.setText(f"Error fetching location data: {e}")
+            self.status.setText(f"Error fetching location data. Try selecting a different location, or try again later.\nError details: {e}")
 
     # Disables location text input when Get Current Locaiton is checked
     def toggle_location_input(self, state):
@@ -418,14 +461,14 @@ class SweaterWeatherApp(QMainWindow):
             if self.use_current_location.isChecked():
                 location_data = self.fetch_current_location()
                 lat, lon, city, region = location_data
-                self.status.setText(f"Fetching forecast for your location: {city}, {region}")
+                self.status.setText(f"Fetching forecast for {city}, {region}...")
             # Text input method - prevent empty or invalid input
             elif city_name:
                 geocoder = Nominatim(user_agent="sweater-weather")
                 location = geocoder.geocode(city_name)
                 if location:
                     lat, lon = location.latitude, location.longitude
-                    self.status.setText(f"Fetching forecast for: {city_name}")
+                    self.status.setText(f"Fetching forecast for {city_name}...")
                 else:
                     self.status.setText("Invalid city name, please try again.")
                     return
@@ -442,16 +485,15 @@ class SweaterWeatherApp(QMainWindow):
                     self.status.setText(header)
                     self.forecast_display.setText(report)
                 else:
-                    self.status.setText("No forecast data available.")
+                    self.status.setText("No forecast data available. Try selecting a differernt locaiton.")
             else:
-                self.status.setText("Could not determine location.")
+                self.status.setText("Could not determine location. Try selecting a different location.")
         except Exception as e:
-            self.status.setText(f"Error fetching forecast data: {e}")
+            self.status.setText(f"Error fetching forecast data. Try selecting a different location.\nError details: {e}")
 
     # Determines which user preferences are met by forecast data
     def report(self, periods):
         try:
-            # Read clothing.json and rating.json
             try:
                 with open("clothing.json", "r") as file:
                     clothing = json.load(file)
@@ -464,45 +506,51 @@ class SweaterWeatherApp(QMainWindow):
                 ratings = []
             if not clothing and not ratings:
                 return "No saved preferences. Set up preferences in the Settings tab.", None
-            # Default header, modified if there are suggestions
-            header = "No suggestions for the coming week."
+            header = "No suggestions for the coming week."  # Report when no suggestions are given
             report = ""
             for p in periods:
-                # Get forecast value for each weather factor
-                time, temp, precip_fc, wind_fc = p["name"], int(p["temperature"]), p["detailedForecast"], p["windSpeed"]
+                time, temp, precip_fc, wind_fc = p["name"], int(p["temperature"]), p["detailedForecast"], p["windSpeed"]  # Get forecast value for each weather factor
                 # Determine precipitation based on keywords from the detailed forecast
-                precip = any(i in precip_fc.lower() for i in ["rain", "shower", "showers", "thunderstorm", "thunderstorms", "snow", "blizzard", "ice", "sleet", "hail", "mix", "mixed"])
-                # Determine max wind speed from the given range using regex
-                wind = max(int(i) for i in re.findall(r'\d+', wind_fc))
-                suggestions = []
-                for c in clothing:
-                    # Add clothing suggestion if it meets the criteria
-                    if c["season"] == self.current_season:
-                        if c["factor"] == "temperature" and temp >= c["min"] and temp <= c["max"] and not any([c["clothing"] == i for i in suggestions]):
-                            suggestions.append(c["clothing"])
-                        if c["factor"] == "precipitation" and ((precip and c["max"] >= 1) or (not precip and c["max"] <= 0)) and not any([c["clothing"] == i for i in suggestions]):
-                            suggestions.append(c["clothing"])
-                        if c["factor"] == "wind_speed" and wind >= c["min"] and wind <= c["max"] and not any([c["clothing"] == i for i in suggestions]):
-                            suggestions.append(c["clothing"])
-                for r in ratings:
-                    # Add rating suggestion if it meets the criteria
-                    if r["factor"] == "temperature" and temp >= r["min"] and temp <= r["max"] and not any([r["rating"] == i for i in suggestions]):
-                        suggestions.append(r["rating"])
-                    if r["factor"] == "precipitation" and ((precip and r["max"] >= 1) or (not precip and r["max"] <= 0)) and not any([r["rating"] == i for i in suggestions]):
-                        suggestions.append(r["rating"])
-                    if r["factor"] == "wind_speed" and wind >= r["min"] and wind <= r["max"] and not any([r["rating"] == i for i in suggestions]):
-                        suggestions.append(r["rating"])
-                if suggestions:
-                    # New header
-                    header = "{0:<15}\t{1:<15}\t{2:<15}\t{3:<15}\t{4:<15}\t".format("Time", "Temperature (F)", "Precipitation", "Wind Speed (mph)", "Suggestions")
-                    # Print row
-                    if precip:
-                        report += "{0:<15}\t{1:<15}\t{2:<15}\t{3:<15}\t".format(time, temp, "Yes", wind) + ", ".join(suggestions) + "\n"
+                if any(i in precip_fc.lower() for i in ["mixed", "mix", "sleet", "hail", "ice", "slush", "freezing rain", "frozen rain"]):
+                    precip = "Mixed"
+                elif any(i in precip_fc.lower() for i in ["snow", "snowfall", "blizzard", "flurry", "flurries", "flurrying"]):
+                    if any(i in precip_fc.lower() for i in ["rain", "rainfall", "thunderstorm", "thunderstorms"]):  # Both rain and snow mentioned is Mixed
+                        precip = "Mixed"
                     else:
-                        report += "{0:<15}\t{1:<15}\t{2:<15}\t{3:<15}\t".format(time, temp, "No", wind) + ", ".join(suggestions) + "\n"
+                        precip = "Snow"
+                elif any(i in precip_fc.lower() for i in ["rain", "rainfall", "shower", "showers", "thunderstorm", "thunderstorms"]):
+                    precip = "Rain"
+                else:
+                    precip = "None"
+                wind = max(int(i) for i in re.findall(r'\d+', wind_fc))  # Extract max wind speed from forecasted range
+                suggestions = []
+                for r in ratings:
+                    # Apply rating if it meets the criteria
+                    if r["factor"] == "temperature" and r["min"] <= temp <= r["max"]:
+                        suggestions.append(r["rating"])
+                        break
+                    elif r["factor"] == "precipitation" and r["min"] <= ["None", "Rain", "Snow", "Mixed"].index(precip) <= r["max"]:
+                        suggestions.append(r["rating"])
+                        break
+                    elif r["factor"] == "wind speed" and r["min"] <= wind <= r["max"]:
+                        suggestions.append(r["rating"])
+                        break
+                for c in clothing:
+                    # Add clothing items if it meets the criteria
+                    if (c["season"] == "all seasons" or c["season"] == self.current_season) and not any([c["clothing"] == i for i in suggestions]):
+                        if c["factor"] == "temperature" and c["min"] <= temp <= c["max"]:
+                            suggestions.append(c["clothing"])
+                        elif c["factor"] == "precipitation" and c["min"] <= ["None", "Rain", "Snow", "Mixed"].index(precip) <= c["max"]:
+                            suggestions.append(c["clothing"])
+                        elif c["factor"] == "wind speed" and c["min"] <= wind <= c["max"]:
+                            suggestions.append(c["clothing"])
+                if suggestions:
+                    report += "{0:<25}\t{1:<15}\t{2:<15}\t{3:<15}\t".format(time, temp, precip, wind) + ", ".join(suggestions) + "\n"
+            if report:
+                header = "{0:<25}\t{1:<15}\t{2:<15}\t{3:<15}\t{4:<15}\t".format("Time", "Temp (F)", "Precipitation", "Wind (mph)", "Suggestions")
             return header, report
         except Exception as e:
-            return f"Unable to generate report: {e}"
+            return f"Unable to generate report.\nError details: {e}"
 
 
 if __name__ == "__main__":
