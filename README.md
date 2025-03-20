@@ -4,7 +4,7 @@ Sweater Weather is a Python application that provides weather forecasts and pers
 
 Data sources: [NWS](https://www.weather.gov/documentation/services-web-api), [IP-API](https://ip-api.com/), [Nominatim](https://nominatim.org/)
 
-Last update: 12/10/24
+Last update: 03/20/2025 - v2.0
 
 ## Requirements
 
